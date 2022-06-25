@@ -19,7 +19,7 @@ db = client['DSMarkets']
 products = db['Products']
 users = db['Users']
 
-#Encoder too export objectid for the elements inside mongodb
+#Encoder to export objectid for the elements inside mongodb
 class MyEncoder(json.JSONEncoder): 
     def default(self, obj):
         if isinstance(obj, ObjectId):
@@ -43,7 +43,7 @@ def create_session(user_name):
 def is_session_valid(user_uuid):
     return user_uuid in users_sessions
 
-#Session for Administrators
+# Session for Administrators
 admins_sessions = {}
 
 # Create sessions for Admins
@@ -55,7 +55,7 @@ def admin_session_valid(admin_uuid):
     return admin_uuid in admins_sessions
 
 
-# Δημιουργία Διαχειριστή 
+# Admin Creation  
 @app.route('/createAdmin', methods=['POST'])
 def create_admin():
     # Request JSON data
@@ -69,16 +69,16 @@ def create_admin():
     if not "email" in data or not "password" in data or not "name" in data:
         return Response("Information incomplete",status=500,mimetype="application/json")
 
-    if users.find({"email":data["email"]}).count() == 0 :# Έλεγχος αν  υπάρχει admin με το email το οποίο δόθηκε.
+    if users.find({"email":data["email"]}).count() == 0 :# Check if an admin corresponds to the email given.
         admin = {"email": data['email'], "name": data['name'], "password":data['password'], "category":"Admin"}
         # Add Admin to the "Users" collection
         users.insert_one(admin)
         return Response(data['name']+" with the email address :"+data['email']+" has been added to the MongoDB", status=200,mimetype='application/json')
-            # Διαφορετικά, αν υπάρχει ήδη κάποιος διαχειριστής  με αυτό το name.
+            # Alternatively , if an admin exists with this name .
     else:
         return Response("An Admin with the given credentials already exists", status=400 ,mimetype='application/json')
 
-# Σύνδεση Ως Διαχειριστής 
+# Admin login 
 @app.route('/AdminLogin', methods=['POST'])
 def admin_login(): 
     data = None 
@@ -92,13 +92,13 @@ def admin_login():
         return Response("Information incomplete",status=500,mimetype="application/json")
     
     if users.find({'$and':[{"email":data["email"]},{"password":data["password"]},{"category": "Admin"} ]}).count() !=0  :
-        admin_uuid = create_admin_session(data['email'])# Ο εκάστοτε χρήστης χρησιμοποιεί ένα μοναδικό uuid το οποίο παρέχει το σύστημα ώστε να παραμείνει σε σύνδεση ο χρήστης.
+        admin_uuid = create_admin_session(data['email'])# uuid used to establish connection with end-user .
         res = {"uuid": admin_uuid, "email": data['email']}
         return Response(json.dumps(res),status=200,mimetype='application/json')
     else:
         return Response("Wrong email or password.",status=400,mimetype='application/json')
 
-# Δημιουργία απλού χρήστη
+# User Creation
 @app.route('/createUser', methods=['POST'])
 def create_user():
     # Request JSON data
@@ -112,16 +112,16 @@ def create_user():
     if not "email" in data or not "password" in data or not "name" in data:
         return Response("Information incomplete",status=500,mimetype="application/json")
 
-    if users.find({"email":data["email"]}).count() == 0 :# Έλεγχος αν  υπάρχει user με το email το οποίο δόθηκε.
+    if users.find({"email":data["email"]}).count() == 0 :# Check if user exists with given email.
         user = {"email": data['email'], "name": data['name'], "password":data['password'], "category":"Simple User"}
         # Add user to the "Users" collection
         users.insert_one(user)
         return Response(data['name']+" with the email address :"+data['email']+" has been added to the MongoDB", status=200,mimetype='application/json')
-            # Διαφορετικά, αν υπάρχει ήδη κάποιος χρήστης με αυτό το username.
+            #  Alternatively , if an user exists with this username .
     else:
         return Response("A user with the given credentials already exists", status=400 ,mimetype='application/json')
 
-# Σύνδεση ως απλός χρήστης
+# Login in us User
 @app.route('/login', methods=['POST'])
 def login(): 
     data = None 
@@ -134,7 +134,7 @@ def login():
     if not "email" in data or not "password" in data :
         return Response("Information incomplete",status=500,mimetype="application/json")
     if users.find({'$and':[{"email":data["email"]},{"password":data["password"]}, {"category": "Simple User"} ]}).count() !=0  :
-        user_uuid = create_session(data['email'])# Ο εκάστοτε χρήστης χρησιμοποιεί ένα μοναδικό uuid το οποίο παρέχει το σύστημα ώστε να παραμείνει σε σύνδεση ο χρήστης.
+        user_uuid = create_session(data['email'])
         res = {"uuid": user_uuid, "email": data['email']}
         global user_email
         user_email = data['email']
@@ -144,7 +144,7 @@ def login():
 
 
 
-# Εύρεση Προϊόντος
+# Search for a product
 @app.route('/getProduct', methods=['GET'])
 def get_product():
     data = None 
@@ -207,7 +207,7 @@ price_list = []
 shopping_cart = []
 
 
-# Προσθήκη Προϊόντος στο καλάθι :
+# Add product to cart :
 @app.route('/addToCart/<int:requested_stock>', methods=['PUT'])
 def add_Product(requested_stock) :
         def totalPrice():
@@ -246,7 +246,7 @@ def add_Product(requested_stock) :
             else :
                 return Response(json.dumps('No product was found by the given ID'),status=500,mimetype="application/json")
 
-# Εμφάνιση Καλαθιού
+# View Cart
 @app.route('/viewCart', methods=['GET'])
 def view_cart():
     uuid = request.headers.get('Authorization')
@@ -260,7 +260,7 @@ def view_cart():
             return Response(json.dumps('Shopping cart is actually empty!'),status=500,mimetype="application/json")
 
 global final_summary
-# Διαφραφή προϊόντος απο το καλάθι μέσω του μοναδικού κωδικού 
+# Delete product from cart via id 
 @app.route('/deleteFromCart', methods=['DELETE'])
 def delete_from_cart():
     uuid = request.headers.get('Authorization')
@@ -295,7 +295,7 @@ def delete_from_cart():
             sum_cost = new_total_cost
             new_final_summary = [("Your price after removal: ",new_total_cost)]
             return jsonify(shopping_cart+new_final_summary)
-# Αγορά προϊόντων 
+# Buy products 
 @app.route('/buyProducts', methods=['GET'])
 def buyProducts():
     uuid = request.headers.get('Authorization')
@@ -312,7 +312,7 @@ def buyProducts():
             return jsonify('Card number entered succsefully and your receipt is displayed','Products',shopping_cart,'Total Cost',sum_cost)
            
         
-# Εμφάνιση ιστορικού παραγγελιών του συγκεκριμένου χρήστη 
+# User purchase history 
 @app.route('/OrderHistory', methods=['PATCH'])
 def order_History ():
     uuid = request.headers.get('Authorization')
@@ -335,7 +335,7 @@ def order_History ():
             return Response(json.dumps('Error 404 Not Found!!', status=404,mimtype='application/json'))
          
 
-# Διαγραφή Απλού χρήστη απο το ΠΣ.
+# Delete user from system
 @app.route('/deleteUser', methods=['DELETE'])
 def delete_user():
     uuid= request.headers.get('Authorization')
@@ -349,9 +349,9 @@ def delete_user():
 
 
 
-#=================================== ENDPOINTS τα οποία αφορούν μονο τους διαχειριστές =================
+#=================================== ENDPOINTS for ADMINS =================
 #=======================================================================================================
-# Δημιουργία προϊόντος
+# Product Creation
 @app.route('/createProduct', methods=['PUT'])
 def create_product():
     uuid= request.headers.get('Authorization')
@@ -375,7 +375,7 @@ def create_product():
             return Response("Could not add the given information",status=400,mimetype='application/json')
 
 
-# Διαγραφή Προϊόντος απο το κατάστημα 
+# Delete product from our store
 @app.route('/deleteProduct/<string:_id>', methods=['DELETE'])
 def delete_product(_id):
     uuid= request.headers.get('Authorization')
@@ -392,7 +392,7 @@ def delete_product(_id):
             return Response(msg,status=400,mimetype='application/json')
 
 
-# Ενημέρωση κάποιου προϊόντος
+# Update a product
 @app.route ('/updateProduct/<string:_id>', methods=['POST', 'PUT'])
 def update_product(_id):
     data = None 
